@@ -1,36 +1,69 @@
 ## Vapor Grooves
 
-deployed to [heroku](http://vapor-grooves-v1.herokuapp.com/)
-a drum sequencer and visualizer built with react-router, p5js, and a little bit of nostalgia. if you're not a fan of the color scheme, you probably weren't a fan of Cam'ron and The Diplomats circa 2003/4.
+A 16-step drum sequencer and p5.js visualizer with a hidden home-row synth. Originally built in 2017, modernized to Vite + React 18 + react-router 6.
 
 ## Project Status
 
-We have a functioning 16-step sequencer, accompanying visualizer, and a hidden synthesizer in the sequencer that the user can play with the home row on the keyboard. Need to track down memory leak that i suspect has something to do with reat-router and the canvas. The visualizer is definitely MVP, with the time alotted for the project I just wanted something rendering on screen based on the audio triggers. 
+Functional 16-step sequencer with five tracks (E40 / Kick / Clap / ClosedHat / OpenHat), tempo control, share-by-URL (AES-encrypted state), and a p5.js audio visualizer. The visualizer also hosts a hidden synth playable from the keyboard's home row (A–;).
 
-## Installation and Setup Instructions
+## Stack
 
-Clone down this repository. You will need `node` and `npm` installed globally on your machine.  
+- React 18 + react-router-dom 6
+- Vite for dev server / build
+- howler.js for sample playback
+- p5.js + p5.sound for the visualizer & synth
+- crypto-js for shareable-URL state
 
-Installation:
+## Setup
 
-`npm install`  
+Requires `node` 18+ and `npm` (or yarn).
 
-To Run Test Suite:  
+```sh
+npm install
+```
 
-`npm test`  
+Run dev server (opens at http://localhost:3000):
 
-To Start Server:
+```sh
+npm run dev
+```
 
-`npm start`  
+Build for production:
 
-To Visit App:
+```sh
+npm run build
+```
 
-`localhost:3000/`  
+Preview the production build:
 
-#### Reflection:  
+```sh
+npm run preview
+```
 
-This was a 2 week project built during my third module at Turing School of Software and Design. Project goals included learning to use p5 to create simple drawings and synthesize noise and solidify my familiarity with react and react-router, and get a little better at styling.
+Deploy to GitHub Pages (uses `dist/` from the build):
 
-I've been struggling to figure out a memory leak issue that happens when we route away from the canvas and then back to it.
+```sh
+npm run deploy
+```
 
-I plan on rebuilding the visualizer without react or router to improve performance of the canvas.
+## Controls
+
+- Click cells to toggle steps
+- `space` — play / pause
+- `1`–`5` — mute the corresponding rack
+- `9` — kill the canvas (frees the visualizer if it starts dragging)
+- `A S D F G H J K L ; '` — play the hidden synth (in the visualizer)
+
+## Notes on the 2026 modernization
+
+The original was React 15 + react-scripts 0.9.2 + react-router 3 + node-sass + enzyme. None of that installs on modern Node. Notable changes:
+
+- Toolchain swapped to Vite; JSX-bearing files renamed `.jsx`.
+- Class components converted to function components with hooks.
+- `cloneElement` props-passing replaced with `<Outlet context>`.
+- `browserHistory` replaced with `useNavigate`.
+- The `Howl` instances are now created once and reused — the original allocated five `Howl` objects on every tick of the step loop, which was almost certainly the "memory leak" the previous README mentioned.
+- `P5Wrapper` now calls `canvas.remove()` on unmount, so navigating away from the visualizer actually frees the p5 instance.
+- `p5.sound` requires a global `window.p5` to attach to; under ES modules this needs a small top-level-await shim (`src/Components/p5-with-sound.js`).
+- `p5.Env` was renamed to `p5.Envelope` in p5.sound 1.x.
+- Enzyme tests were removed (they couldn't survive the React 18 jump and were mostly `.skip` anyway).
