@@ -1,17 +1,13 @@
 import React from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import DrumRack from './DrumRack';
+import Instructions from './Instructions';
+import Visualizer from './Visualizer';
+import { useDrumKeyHandler } from './hooks';
 
 const DrumMachine = () => {
   const props = useOutletContext();
-
-  const handleKey = (e) => {
-    props.toggleMute(e.keyCode);
-    if (e.keyCode === 32) {
-      e.preventDefault();
-      props.playPause();
-    }
-  };
+  const handleKey = useDrumKeyHandler(props);
 
   return (
     <div id="drum-machine-container" tabIndex="0" onKeyDown={handleKey}>
@@ -28,18 +24,11 @@ const DrumMachine = () => {
         <button id="share-button" onClick={props.resetLoops}>
           reset
         </button>
-        <Link to="/visualizer">
-          <button id="visuals-link">
-            visualizer
-          </button>
-        </Link>
-        <Link to="/instructions">
-          <button id="instructions-link">
-            instructions
-          </button>
-        </Link>
-        <button id="share-button" onClick={props.encrypt}>
-          share
+        <button id="visuals-link" onClick={props.openVisualizer}>
+          visualizer
+        </button>
+        <button id="instructions-link" onClick={props.openInstructions}>
+          instructions
         </button>
       </div>
 
@@ -56,6 +45,8 @@ const DrumMachine = () => {
         ))}
       </div>
 
+      {props.showVisualizer && <Visualizer onDismiss={props.closeVisualizer} />}
+      {props.showInstructions && <Instructions onDismiss={props.closeInstructions} />}
     </div>
   );
 };

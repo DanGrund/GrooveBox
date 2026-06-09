@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { Howl } from 'howler';
-import CryptoJS from 'crypto-js';
-
-const SECRET = 'secretkey123';
+import { useLatestRef } from './hooks';
 
 const emptyLoop = () => new Array(16).fill(false);
 
@@ -15,35 +13,29 @@ const defaultRacks = () => ({
   OpenHat: emptyLoop(),
 });
 
-const emptyRacks = () => ({
-  E40: emptyLoop(), Kick: emptyLoop(), Clap: emptyLoop(),
-  ClosedHat: emptyLoop(), OpenHat: emptyLoop(),
-});
+const emptyRacks = () =>
+  Object.fromEntries(Object.keys(defaultRacks()).map((k) => [k, emptyLoop()]));
+
+const MUTE_KEYS = { 49: 'E40', 50: 'Kick', 51: 'Clap', 52: 'ClosedHat', 53: 'OpenHat' };
 
 export default function App() {
   const [drumRacks, setDrumRacks] = useState(defaultRacks);
   const [mute, setMute] = useState({
-    Kick: false, OpenHat: false, ClosedHat: false, Clap: false, E40: false, Canvas: false,
+    Kick: false, OpenHat: false, ClosedHat: false, Clap: false, E40: false,
   });
   const [playMusic, setPlayMusic] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [tempo, setTempo] = useState(200);
-
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [showInstructions, setShowInstructions] = useState(true);
+  const [showVisualizer, setShowVisualizer] = useState(false);
 
   // Refs let the setTimeout loop read the latest values without resubscribing.
-  const playMusicRef = useRef(playMusic);
-  const drumRacksRef = useRef(drumRacks);
-  const muteRef = useRef(mute);
-  const tempoRef = useRef(tempo);
-  const stepRef = useRef(currentStep);
+  const playMusicRef = useLatestRef(playMusic);
+  const drumRacksRef = useLatestRef(drumRacks);
+  const muteRef = useLatestRef(mute);
+  const tempoRef = useLatestRef(tempo);
+  const stepRef = useLatestRef(currentStep);
   const e40ToggleRef = useRef(true);
-  useEffect(() => { playMusicRef.current = playMusic; }, [playMusic]);
-  useEffect(() => { drumRacksRef.current = drumRacks; }, [drumRacks]);
-  useEffect(() => { muteRef.current = mute; }, [mute]);
-  useEffect(() => { tempoRef.current = tempo; }, [tempo]);
-  useEffect(() => { stepRef.current = currentStep; }, [currentStep]);
 
   // Sounds are created once, not per-step — the original allocated 5+ Howl
   // instances on every tick which leaked audio buffers.
@@ -58,22 +50,6 @@ export default function App() {
       Clap: new Howl({ src: ['Sounds/Clap.mp3'] }),
     };
   }
-
-  // Decrypt shared-loop URLs (/drummachine/<ciphertext>).
-  useEffect(() => {
-    if (!location.pathname.startsWith('/drummachine/')) return;
-    const raw = location.pathname.slice('/drummachine/'.length);
-    if (!raw) return;
-    try {
-      const bytes = CryptoJS.AES.decrypt(decodeURIComponent(raw), SECRET);
-      const data = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-      setDrumRacks(data);
-      navigate('/drummachine', { replace: true });
-    } catch (err) {
-      console.warn('Failed to decrypt shared loop', err);
-      navigate('/drummachine', { replace: true });
-    }
-  }, [location.pathname, navigate]);
 
   // One self-rescheduling timer, mounted once.
   useEffect(() => {
@@ -101,6 +77,7 @@ export default function App() {
     };
     timeoutId = setTimeout(tick, tempoRef.current);
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleStep = useCallback((key, index) => {
@@ -111,39 +88,25 @@ export default function App() {
   }, []);
 
   const toggleMute = useCallback((keyCode) => {
-    setMute((prev) => {
-      const next = { ...prev };
-      switch (keyCode) {
-        case 49: next.E40 = !next.E40; break;
-        case 50: next.Kick = !next.Kick; break;
-        case 51: next.Clap = !next.Clap; break;
-        case 52: next.ClosedHat = !next.ClosedHat; break;
-        case 53: next.OpenHat = !next.OpenHat; break;
-        case 57: next.Canvas = !next.Canvas; break;
-        default: return prev;
-      }
-      return next;
-    });
+    const name = MUTE_KEYS[keyCode];
+    if (!name) return;
+    setMute((prev) => ({ ...prev, [name]: !prev[name] }));
   }, []);
 
   const playPause = useCallback(() => setPlayMusic((v) => !v), []);
   const resetLoops = useCallback(() => setDrumRacks(emptyRacks()), []);
   const updateTempo = useCallback((e) => setTempo(+e.target.value), []);
-  const toggleCanvas = useCallback(() => {
-    setMute((prev) => ({ ...prev, Canvas: false }));
-  }, []);
-
-  const encrypt = useCallback(() => {
-    const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(drumRacks), SECRET).toString();
-    navigate(`/drummachine/${encodeURIComponent(ciphertext)}`);
-  }, [drumRacks, navigate]);
+  const openInstructions = useCallback(() => setShowInstructions(true), []);
+  const closeInstructions = useCallback(() => setShowInstructions(false), []);
+  const openVisualizer = useCallback(() => setShowVisualizer(true), []);
+  const closeVisualizer = useCallback(() => setShowVisualizer(false), []);
 
   return (
     <div className="App">
       <Outlet context={{
-        toggleStep, playPause, updateTempo, toggleMute, toggleCanvas,
-        resetLoops, encrypt,
-        currentStep, drumRacks, tempo, mute,
+        toggleStep, playPause, updateTempo, toggleMute,
+        resetLoops, openInstructions, closeInstructions, openVisualizer, closeVisualizer,
+        currentStep, drumRacks, tempo, mute, showInstructions, showVisualizer,
       }} />
     </div>
   );

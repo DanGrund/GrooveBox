@@ -1,20 +1,16 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
-const Instructions = () => (
-  <div id="trex-layer">
-    <div id="instructions-container">
+const Instructions = ({ onDismiss }) => (
+  <div className="instructions-backdrop" onClick={onDismiss}>
+    <div className="instructions-card" onClick={(e) => e.stopPropagation()}>
       <h1>Vapor Grooves</h1>
       <h3>instructions</h3>
-      <li>create a drum loop by toggling the switches on the next screen</li>
-      <li>when you're satisfied with your loop, move to the visualizer!</li>
-      <li>enjoy the wavy visuals, and change the rhythm by muting drum tracks with keys 1-5</li>
+      <li>toggle the switches to build a drum loop</li>
+      <li>press <strong>space</strong> to play / pause</li>
+      <li>head to the visualizer for wavy visuals and a hidden home-row synth</li>
+      <li>mute individual tracks with keys <strong>1–5</strong></li>
 
-      <Link to="/drummachine">
-        <button id="link-to-drums">
-          gimme the beat
-        </button>
-      </Link>
+      <button id="link-to-drums" onClick={onDismiss}>groove</button>
       <p>built with React, p5js, and a little bit of nostalgia</p>
     </div>
   </div>

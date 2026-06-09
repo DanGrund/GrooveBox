@@ -13,7 +13,6 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "crypto-js": "^4.2.0",
     "howler": "^2.2.4",
     "p5": "^1.11.1",
     "react": "^18.3.1",

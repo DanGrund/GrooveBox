@@ -1,17 +1,25 @@
 import p5 from './p5-with-sound';
 
+const TRACK_ORDER = ['Kick', 'Clap', 'ClosedHat', 'E40', 'OpenHat'];
+const KEY_MIDI = {
+  65: 60, 83: 64, 68: 67, 70: 71, 71: 72,
+  72: 76, 74: 77, 75: 79, 76: 81, 186: 83, 222: 84,
+};
+
+const canvasSize = (p) => ({
+  w: Math.min(1000, p.windowWidth * 0.95),
+  h: Math.min(700, p.windowHeight * 0.65),
+});
+
 const sketch = (p) => {
-  let kickRadius = 50;
-  let clapRadius = 50;
-  let closedRadius = 50;
-  let openRadius = 50;
-  let bassRadius = 50;
+  const radii = Object.fromEntries(TRACK_ORDER.map((t) => [t, 50]));
   let midiValue = 0;
   let osc, envelope, fft, reverb, delay;
   let audioStarted = false;
 
   p.setup = () => {
-    p.createCanvas(1000, 0.7 * p.displayHeight);
+    const { w, h } = canvasSize(p);
+    p.createCanvas(w, h);
     p.frameRate(30);
     osc = new p5.SinOsc();
     reverb = new p5.Reverb();
@@ -28,6 +36,11 @@ const sketch = (p) => {
     p.noStroke();
   };
 
+  p.windowResized = () => {
+    const { w, h } = canvasSize(p);
+    p.resizeCanvas(w, h);
+  };
+
   const ensureAudio = () => {
     if (!audioStarted && typeof p.userStartAudio === 'function') {
       p.userStartAudio();
@@ -36,44 +49,36 @@ const sketch = (p) => {
   };
 
   p.mousePressed = ensureAudio;
+  p.touchStarted = ensureAudio;
   p.keyPressed = ensureAudio;
 
   p.draw = () => {
+    const scale = Math.min(1, p.width / 1000);
+    const restR = 50 * scale;
+    const hitR = 200 * scale;
+    const decay = 4 * scale;
+
     p.clear();
     p.background(0);
-    if (kickRadius > 50) kickRadius -= 4;
-    if (clapRadius > 50) clapRadius -= 4;
-    if (closedRadius > 50) closedRadius -= 4;
-    if (openRadius > 50) openRadius -= 4;
-    if (bassRadius > 50) bassRadius -= 4;
 
     p.fill('rgba(255,43,56, 0.8)');
-    p.ellipse(166, p.height / 2, kickRadius);
-    p.ellipse(332, p.height / 2, clapRadius);
-    p.ellipse(500, p.height / 2, closedRadius);
-    p.ellipse(666, p.height / 2, bassRadius);
-    p.ellipse(830, p.height / 2, openRadius);
+    TRACK_ORDER.forEach((t, i) => {
+      if (radii[t] > restR) radii[t] = Math.max(restR, radii[t] - decay);
+      const x = p.width * (i + 0.5) / TRACK_ORDER.length;
+      p.ellipse(x, p.height / 2, radii[t]);
+    });
 
-    // map home row to midi values
-    if (p.keyIsDown(65)) { midiValue = 60; } else { midiValue = 0; }
-    if (p.keyIsDown(83)) midiValue = 64;
-    if (p.keyIsDown(68)) midiValue = 67;
-    if (p.keyIsDown(70)) midiValue = 71;
-    if (p.keyIsDown(71)) midiValue = 72;
-    if (p.keyIsDown(72)) midiValue = 76;
-    if (p.keyIsDown(74)) midiValue = 77;
-    if (p.keyIsDown(75)) midiValue = 79;
-    if (p.keyIsDown(76)) midiValue = 81;
-    if (p.keyIsDown(186)) midiValue = 83;
-    if (p.keyIsDown(222)) midiValue = 84;
+    midiValue = 0;
+    for (const [keyCode, note] of Object.entries(KEY_MIDI)) {
+      if (p.keyIsDown(+keyCode)) midiValue = note;
+    }
 
-    const freqValue = p.midiToFreq(midiValue);
-    osc.freq(freqValue);
+    osc.freq(p.midiToFreq(midiValue));
     osc.amp(midiValue === 0 ? 0 : 1);
     if (midiValue !== 0) envelope.play(osc, 0, 0.1);
 
     const spectrum = fft.analyze();
-    for (let i = 0; i < spectrum.length * 4; i++) {
+    for (let i = 0; i < spectrum.length; i++) {
       p.fill(spectrum[i], spectrum[i] / 10, 140);
       const x = p.map(i, 0, spectrum.length / 18, 0, p.width);
       const h = p.map(spectrum[i], 0, 255, 0, p.height);
@@ -84,12 +89,11 @@ const sketch = (p) => {
 
   p.reDraw = (props) => {
     if (!props) return;
-    if (props.drumRacks.Kick[props.currentStep] && !props.mute.Kick) kickRadius = 200;
-    if (props.drumRacks.Clap[props.currentStep] && !props.mute.Clap) clapRadius = 200;
-    if (props.drumRacks.ClosedHat[props.currentStep] && !props.mute.ClosedHat) closedRadius = 200;
-    if (props.drumRacks.OpenHat[props.currentStep] && !props.mute.OpenHat) openRadius = 200;
-    if (props.drumRacks.E40[props.currentStep] && !props.mute.E40) bassRadius = 200;
-    if (props.mute.Canvas) p.remove();
+    const scale = Math.min(1, p.width / 1000);
+    const hitR = 200 * scale;
+    TRACK_ORDER.forEach((t) => {
+      if (props.drumRacks[t][props.currentStep] && !props.mute[t]) radii[t] = hitR;
+    });
   };
 };
 

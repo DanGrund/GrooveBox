@@ -36,23 +36,29 @@ a:focus{
   outline: none;
 }
 
-/*Instructions Component*/
-#instructions-container{
-  height: inherit;
+/*Instructions Overlay*/
+.instructions-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
   align-items: center;
-  border-radius: 20px;
-  box-shadow: 4px 5px 20px 2px pink;
+  justify-content: center;
+  background-color: rgba(60, 30, 90, 0.45);
+  backdrop-filter: blur(2px);
 }
 
-#trex-layer {
-  width: 80vw;
-  height: 80vh;
-  margin: 40px auto;
+.instructions-card {
+  width: min(80vw, 640px);
+  max-height: 80vh;
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   border-radius: 20px;
-  background-color: rgba(255, 230, 230, .8);
+  background-color: rgba(255, 230, 230, 0.95);
+  box-shadow: 4px 5px 30px 4px pink;
+  overflow-y: auto;
 }
 
 h1 {
@@ -85,8 +91,14 @@ li {
   font-size: 20px;
 }
 
-#trex-layer p {
-  margin-top: 80px;
+.instructions-card p {
+  margin-top: 30px;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /*Drum Machine Component*/
@@ -96,7 +108,7 @@ li {
   flex-direction: column;
   width: 90vw;
   height: auto;
-  margin: 10vh auto;
+  margin: auto;
   padding: 5px 10px 20px;
   background-color: rgba(255, 230, 230, 0.8);
   box-shadow: 5px 5px 20px 2px pink;
@@ -214,12 +226,17 @@ li {
   transition: .1s
 }
 
-/*Visualizer Component*/
+/*Visualizer Overlay*/
 #visualizer-container {
-  margin-top: 3vh;
+  position: fixed;
+  inset: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: rgba(20, 10, 35, 0.92);
 }
 
 #visualizer-container:focus{
@@ -243,4 +260,128 @@ li {
 canvas {
   border-radius: 10px;
   box-shadow: 0px 0px 30px 10px pink;
+  max-width: 100%;
+}
+
+/* Mobile / narrow viewports: portrait sequencer + sized-down chrome */
+@media (max-width: 768px) {
+  #drum-machine-container {
+    width: 100vw;
+    margin: 0;
+    border-radius: 0;
+    padding: 8px 4px 12px;
+  }
+  #drum-machine-container:hover {
+    box-shadow: 5px 5px 20px 2px pink;
+  }
+
+  #play-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 6px 4px 10px;
+  }
+  #drum-logo {
+    font-size: 28px;
+    margin: 0;
+    width: 100%;
+    text-align: center;
+  }
+  #play-controls button,
+  #play-button,
+  #share-button,
+  #visuals-link,
+  #instructions-link {
+    margin: 0;
+    width: 84px;
+    height: 32px;
+    font-size: 11px;
+  }
+  #tempo-slider input {
+    width: 140px;
+    height: 28px;
+  }
+  #tempo-slider p {
+    font-size: 11px;
+  }
+
+  /* racks rotate: 5 vertical columns side-by-side instead of 5 stacked rows */
+  #drum-racks {
+    flex-direction: row;
+    justify-content: space-around;
+    padding-top: 6px;
+    padding-bottom: 8px;
+    gap: 4px;
+  }
+  .single-rack {
+    flex-direction: column;
+    flex: 1;
+    margin: 0 2px;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+  .sample-name {
+    width: auto;
+    margin: 0 0 4px;
+    text-align: center;
+    font-size: 10px;
+  }
+  .step {
+    padding: 2px;
+    margin: 1px 0;
+  }
+  .step-on,
+  .step-off {
+    width: 100%;
+    height: 18px;
+  }
+  .current {
+    box-shadow: 0 0 12px 4px pink;
+  }
+
+  /* instructions overlay: smaller card and headings */
+  .instructions-card {
+    width: 92vw;
+    padding: 18px 22px;
+  }
+  .instructions-card h1 {
+    font-size: 38px;
+    margin: 10px auto 14px;
+    padding: 0;
+  }
+  .instructions-card h3 {
+    font-size: 18px;
+  }
+  .instructions-card li {
+    font-size: 13px;
+  }
+  .instructions-card p {
+    margin-top: 16px;
+    font-size: 11px;
+  }
+  #link-to-drums {
+    margin: 18px auto;
+    width: 140px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  /* visualizer overlay: tighter chrome around the canvas */
+  #visualizer-container {
+    padding: 10px;
+  }
+  #links-wrapper {
+    margin-top: 10px;
+    gap: 6px;
+  }
+  #links-wrapper button {
+    margin: 2px;
+    width: 110px;
+    height: 44px;
+    font-size: 11px;
+  }
+  #instructions {
+    font-size: 10px;
+    padding: 0 10px;
+  }
 }
